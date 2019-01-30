@@ -9,7 +9,10 @@ use crate::{
     context::Context,
     instance::Observer,
     nucleus::{
-        ribosome::api::call::{reduce_call, validate_call},
+        ribosome::{
+            api::call::{reduce_call, validate_call},
+            WasmCallData,
+        },
         state::{NucleusState, NucleusStatus},
     },
 };
@@ -207,14 +210,12 @@ pub(crate) fn launch_zome_fn_call(
     thread::spawn(move || {
         // Have Ribosome spin up DNA and call the zome function
         let call_result = ribosome::run_dna(
-            &dna_name,
-            context.clone(),
             code,
-            &zome_call,
             Some(zome_call.clone().parameters.into_bytes()),
+            WasmCallData::new_zome_call(context.clone(), dna_name, zome_call.clone()),
         );
         // Construct response
-        let response = ExecuteZomeFnResponse::new(zome_call.clone(), call_result);
+        let response = ExecuteZomeFnResponse::new(zome_call, call_result);
         // Send ReturnZomeFunctionResult Action
         context
             .action_channel()
